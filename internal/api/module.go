@@ -22,7 +22,8 @@ var Module = fx.Module(
 	fx.Provide(func(log *zap.Logger) http.Options {
 		return *(&http.Options{}).WithErrorHandler(http.NewJSONErrorHandler(log))
 	}),
-	fx.Invoke(func(app *fiber.App, config Config) {
+	fx.Provide(newCSR, fx.Private),
+	fx.Invoke(func(app *fiber.App, csr *csr, config Config) {
 		api := app.Group("/api/v1")
 
 		apidoc.SwaggerInfo.Version = version.AppVersion
@@ -39,6 +40,8 @@ var Module = fx.Module(
 		}
 
 		api.Use(jsonify.New())
+
+		csr.Register(api.Group("csr"))
 
 		api.Use(func(ctx *fiber.Ctx) error {
 			return ctx.SendStatus(fiber.StatusNotFound)
