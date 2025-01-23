@@ -1,0 +1,29 @@
+services:
+  server:
+    image: "ghcr.io/android-sms-gateway/ca:latest"
+    build:
+      context: .
+      target: final
+    environment:
+      - HTTP__ADDRESS=:3000
+      - HTTP__PROXY_HEADER=X-Forwarded-For
+      - HTTP__PROXIES=127.0.0.1
+      - STORAGE__URL=redis://redis:6379/0
+    ports:
+      - 3000:3000
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis-data:

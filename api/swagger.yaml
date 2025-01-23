@@ -1,0 +1,16 @@
+basePath: /api/v1
+host: ca.sms-gate.app
+info:
+  contact:
+    email: support@sms-gate.app
+    name: SMSGate Support
+  description: Provides methods to manage certificates
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: SMS Gate Certificate Authority API
+  version: "{{VERSION}}"
+paths: {}
+schemes:
+  - https
+swagger: "2.0"
