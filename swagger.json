@@ -1,0 +1,22 @@
+{
+    "schemes": [
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Provides methods to manage certificates",
+        "title": "SMS Gate Certificate Authority API",
+        "contact": {
+            "name": "SMSGate Support",
+            "email": "support@sms-gate.app"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "{{VERSION}}"
+    },
+    "host": "ca.sms-gate.app",
+    "basePath": "/api/v1",
+    "paths": {}
+}
