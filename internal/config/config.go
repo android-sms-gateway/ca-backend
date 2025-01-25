@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/android-sms-gateway/ca/pkg/core/config"
 )
 
@@ -18,10 +20,15 @@ type StorageConfig struct {
 	URL string `envconfig:"STORAGE__URL"`
 }
 
+type CSR struct {
+	TTL time.Duration `envconfig:"CSR__TTL"`
+}
+
 type Config struct {
 	Http    HttpConfig
 	API     APIConfig
 	Storage StorageConfig
+	CSR     CSR
 }
 
 var instance = Config{
@@ -33,6 +40,9 @@ var instance = Config{
 	},
 	Storage: StorageConfig{
 		URL: "redis://localhost:6379/0",
+	},
+	CSR: CSR{
+		TTL: 24 * time.Hour,
 	},
 }
 

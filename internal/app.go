@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/android-sms-gateway/ca/internal/api"
 	"github.com/android-sms-gateway/ca/internal/config"
+	"github.com/android-sms-gateway/ca/internal/csr"
 	"github.com/android-sms-gateway/ca/pkg/core/http"
 	"github.com/android-sms-gateway/ca/pkg/core/logger"
 	"github.com/android-sms-gateway/ca/pkg/core/redis"
@@ -27,6 +28,7 @@ func Run() {
 
 		config.Module,
 		api.Module,
+		csr.Module,
 	).
 		Run()
 }

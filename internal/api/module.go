@@ -23,7 +23,7 @@ var Module = fx.Module(
 		return *(&http.Options{}).WithErrorHandler(http.NewJSONErrorHandler(log))
 	}),
 	fx.Provide(newCSR, fx.Private),
-	fx.Invoke(func(app *fiber.App, csr *csr, config Config) {
+	fx.Invoke(func(app *fiber.App, csr *csrHandler, config Config) {
 		api := app.Group("/api/v1")
 
 		apidoc.SwaggerInfo.Version = version.AppVersion

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/android-sms-gateway/ca/internal/csr"
 	"github.com/android-sms-gateway/ca/pkg/client"
 	"github.com/android-sms-gateway/ca/pkg/core/handler"
 	"github.com/go-playground/validator/v10"
@@ -8,25 +9,32 @@ import (
 	"go.uber.org/zap"
 )
 
-type csr struct {
+type csrHandler struct {
 	handler.Base
+
+	csrSvc *csr.Service
 }
 
-func (c *csr) submit(ctx *fiber.Ctx) error {
+func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 	req := client.PostCSRRequest{}
 	if err := c.BodyParserValidator(ctx, &req); err != nil {
 		return err
 	}
 
+	res, err := c.csrSvc.Create(ctx.Context(), csr.NewCSR(req.Content, req.Metadata))
+	if err != nil {
+		return err
+	}
+
 	return ctx.JSON(client.PostCSRResponse{
-		RequestID:   "123",
-		Status:      client.CSRStatusApproved,
-		Message:     client.CSRStatusDescriptionApproved,
-		Certificate: "some cert",
+		RequestID:   res.ID(),
+		Status:      res.Status(),
+		Message:     res.Status().Description(),
+		Certificate: res.Certificate(),
 	})
 }
 
-func (c *csr) status(ctx *fiber.Ctx) error {
+func (c *csrHandler) status(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 
 	return ctx.JSON(client.PostCSRResponse{
@@ -37,18 +45,30 @@ func (c *csr) status(ctx *fiber.Ctx) error {
 	})
 }
 
-func (c *csr) Register(router fiber.Router) {
+func (c *csrHandler) Register(router fiber.Router) {
 	// router.Use(limiter.New(1, time.Minute))
 
 	router.Post("", c.submit)
 	router.Get(":id", c.status)
 }
 
-func newCSR(v *validator.Validate, l *zap.Logger) *csr {
-	return &csr{
-		handler.Base{
+func newCSR(csrSvc *csr.Service, v *validator.Validate, l *zap.Logger) *csrHandler {
+	if csrSvc == nil {
+		panic("service is required")
+	}
+	if v == nil {
+		panic("validator is required")
+	}
+	if l == nil {
+		panic("logger is required")
+	}
+
+	return &csrHandler{
+		Base: handler.Base{
 			Validator: v,
 			Logger:    l,
 		},
+
+		csrSvc: csrSvc,
 	}
 }
