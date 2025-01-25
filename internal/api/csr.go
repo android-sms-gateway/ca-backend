@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+
 	"github.com/android-sms-gateway/ca/internal/csr"
 	"github.com/android-sms-gateway/ca/pkg/client"
 	"github.com/android-sms-gateway/ca/pkg/core/handler"
@@ -37,19 +39,43 @@ func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 func (c *csrHandler) status(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 
-	return ctx.JSON(client.PostCSRResponse{
-		RequestID:   id,
-		Status:      client.CSRStatusApproved,
-		Message:     client.CSRStatusDescriptionApproved,
-		Certificate: "some cert",
-	})
+	res, err := c.csrSvc.Get(ctx.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(res)
 }
 
 func (c *csrHandler) Register(router fiber.Router) {
 	// router.Use(limiter.New(1, time.Minute))
 
+	router.Use(c.handleError)
+
 	router.Post("", c.submit)
 	router.Get(":id", c.status)
+}
+
+func (c *csrHandler) handleError(ctx *fiber.Ctx) error {
+	err := ctx.Next()
+
+	if err == nil {
+		return err
+	}
+
+	if errors.Is(err, csr.ErrCSRNotFound) {
+		return fiber.NewError(fiber.StatusNotFound, err.Error())
+	}
+
+	if errors.Is(err, csr.ErrCSRAlreadyExists) {
+		return fiber.NewError(fiber.StatusConflict, err.Error())
+	}
+
+	if errors.Is(err, csr.ErrCSRInvalid) {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	return err
 }
 
 func newCSR(csrSvc *csr.Service, v *validator.Validate, l *zap.Logger) *csrHandler {

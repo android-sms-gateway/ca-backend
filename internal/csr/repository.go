@@ -20,7 +20,7 @@ type repository struct {
 	ttl time.Duration
 }
 
-func (r *repository) Create(ctx context.Context, requestId string, csr CSR) error {
+func (r *repository) Insert(ctx context.Context, requestId string, csr CSR) error {
 	res := r.redis.HSetNX(ctx, keyStatus, requestId, string(client.CSRStatusPending))
 	if err := res.Err(); err != nil {
 		return fmt.Errorf("failed to create csr: %w", err)
@@ -47,17 +47,27 @@ func (r *repository) Create(ctx context.Context, requestId string, csr CSR) erro
 	return nil
 }
 
-// func (r *repository) GetStatus(ctx context.Context, requestId string) (CSRStatus, error) {
-// 	keyStatus := r.prefix + ":csr:" + requestId + ":status"
-// 	res := r.redis.Get(ctx, keyStatus)
-// 	if err := res.Err(); err != nil {
-// 		return CSRStatus{}, err
-// 	}
+func (r *repository) Get(ctx context.Context, requestId string) (CSRStatus, error) {
+	status, err := r.redis.HGet(ctx, keyStatus, requestId).Result()
+	if errors.Is(err, redis.Nil) {
+		return CSRStatus{}, ErrCSRNotFound
+	}
+	if err != nil {
+		return CSRStatus{}, fmt.Errorf("failed to get csr: %w", err)
+	}
 
-// 	return CSRStatus{
-// 		Status: client.CSRStatus(res.Val()),
-// 	}, nil
-// }
+	key := "csr:" + requestId
+	res, err := r.redis.HGetAll(ctx, key).Result()
+	if err != nil {
+		return CSRStatus{}, fmt.Errorf("failed to get csr: %w", err)
+	}
+
+	if len(res) == 0 {
+		return CSRStatus{}, ErrCSRNotFound
+	}
+
+	return NewCSRStatus(requestId, client.CSRStatus(status), res["certificate"], res["reason"]), nil
+}
 
 func newRepository(redis *redis.Client, ttl time.Duration) *repository {
 	if redis == nil {

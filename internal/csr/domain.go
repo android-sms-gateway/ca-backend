@@ -43,13 +43,15 @@ type CSRStatus struct {
 	id          string
 	status      client.CSRStatus
 	certificate string
+	reason      string
 }
 
-func NewCSRStatus(id string, status client.CSRStatus, certificate string) CSRStatus {
+func NewCSRStatus(id string, status client.CSRStatus, certificate string, reason string) CSRStatus {
 	return CSRStatus{
 		id:          id,
 		status:      status,
 		certificate: certificate,
+		reason:      reason,
 	}
 }
 
