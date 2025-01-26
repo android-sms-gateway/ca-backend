@@ -2,6 +2,7 @@ package csr
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -66,7 +67,13 @@ func (r *repository) Get(ctx context.Context, requestId string) (CSRStatus, erro
 		return CSRStatus{}, ErrCSRNotFound
 	}
 
-	return NewCSRStatus(requestId, client.CSRStatus(status), res["certificate"], res["reason"]), nil
+	metadata := map[string]string{}
+
+	if err := json.Unmarshal([]byte(res["metadata"]), &metadata); err != nil {
+		return CSRStatus{}, fmt.Errorf("failed to get csr: %w", err)
+	}
+
+	return NewCSRStatus(requestId, res["content"], metadata, client.CSRStatus(status), res["certificate"], res["reason"]), nil
 }
 
 func newRepository(redis *redis.Client, ttl time.Duration) *repository {

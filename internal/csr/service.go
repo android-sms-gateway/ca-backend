@@ -2,12 +2,14 @@ package csr
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"math/big"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/android-sms-gateway/ca/pkg/client"
@@ -19,6 +21,9 @@ import (
 
 type Service struct {
 	csrs *repository
+
+	caCert *x509.Certificate
+	caKey  any
 
 	queue *queue.Queue
 	newid func() string
@@ -57,7 +62,7 @@ func (s *Service) Create(ctx context.Context, csr CSR) (CSRStatus, error) {
 		s.log.Error("failed to queue csr", zap.Error(err))
 	}
 
-	return NewCSRStatus(id, client.CSRStatusPending, "", ""), nil
+	return NewCSRStatus(id, csr.content, csr.metadata, client.CSRStatusPending, "", ""), nil
 }
 
 func (s *Service) Get(ctx context.Context, id string) (CSRStatus, error) {
@@ -82,13 +87,13 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 		return nil
 	}
 
-	csr, err := s.parseCsr(res.Certificate())
+	csr, err := s.parseCsr(res.Content())
 	if err != nil {
 		return err
 	}
 
 	// Create a signed certificate
-	_ = &x509.Certificate{
+	template := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
 		Subject:               csr.Subject,
 		NotBefore:             time.Now(),
@@ -102,19 +107,21 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 		IPAddresses:           csr.IPAddresses,
 	}
 
-	// certBytes, err := x509.CreateCertificate(rand.Reader, template, caKey, csr.PublicKey, caPriv)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to sign certificate: %w", err)
-	// }
+	certBytes, err := x509.CreateCertificate(rand.Reader, template, s.caCert, csr.PublicKey, s.caKey)
+	if err != nil {
+		return fmt.Errorf("failed to sign certificate: %w", err)
+	}
 
-	time.Sleep(time.Second * 10)
+	// Encode the signed certificate to PEM format
+	var certPEM strings.Builder
+	if err := pem.Encode(&certPEM, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes}); err != nil {
+		return fmt.Errorf("failed to encode certificate: %w", err)
+	}
+
+	s.log.Info("signed certificate", zap.String("id", id), zap.String("csr", res.Certificate()), zap.String("cert", certPEM.String()))
 
 	return nil
 }
-
-// func LoadCA(certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error) {
-
-// }
 
 func (s *Service) parseCsr(content string) (*x509.CertificateRequest, error) {
 	block, _ := pem.Decode([]byte(content))
@@ -125,9 +132,17 @@ func (s *Service) parseCsr(content string) (*x509.CertificateRequest, error) {
 	return x509.ParseCertificateRequest(block.Bytes)
 }
 
-func NewService(csrs *repository, log *zap.Logger) *Service {
+func NewService(csrs *repository, caCert *x509.Certificate, caKey any, log *zap.Logger) *Service {
 	if csrs == nil {
 		panic("csrs is required")
+	}
+
+	if caCert == nil {
+		panic("caCert is required")
+	}
+
+	if caKey == nil {
+		panic("caKey is required")
 	}
 
 	if log == nil {
@@ -138,6 +153,9 @@ func NewService(csrs *repository, log *zap.Logger) *Service {
 
 	s := &Service{
 		csrs: csrs,
+
+		caCert: caCert,
+		caKey:  caKey,
 
 		newid: newid,
 		log:   log,

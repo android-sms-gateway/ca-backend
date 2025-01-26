@@ -40,14 +40,19 @@ func (c CSR) toMap() map[string]string {
 }
 
 type CSRStatus struct {
+	CSR
 	id          string
 	status      client.CSRStatus
 	certificate string
 	reason      string
 }
 
-func NewCSRStatus(id string, status client.CSRStatus, certificate string, reason string) CSRStatus {
+func NewCSRStatus(id string, content string, metadata map[string]string, status client.CSRStatus, certificate string, reason string) CSRStatus {
 	return CSRStatus{
+		CSR: CSR{
+			content:  content,
+			metadata: metadata,
+		},
 		id:          id,
 		status:      status,
 		certificate: certificate,

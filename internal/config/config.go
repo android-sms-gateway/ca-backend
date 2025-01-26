@@ -21,7 +21,9 @@ type StorageConfig struct {
 }
 
 type CSR struct {
-	TTL time.Duration `envconfig:"CSR__TTL"`
+	TTL        time.Duration `envconfig:"CSR__TTL"`
+	CACertPath string        `envconfig:"CSR__CA_CERT_PATH" required:"true"`
+	CAKeyPath  string        `envconfig:"CSR__CA_KEY_PATH" required:"true"`
 }
 
 type Config struct {

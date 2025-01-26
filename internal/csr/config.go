@@ -3,5 +3,7 @@ package csr
 import "time"
 
 type Config struct {
-	TTL time.Duration
+	CACert []byte
+	CAKey  []byte
+	TTL    time.Duration
 }

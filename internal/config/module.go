@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+
 	"github.com/android-sms-gateway/ca/internal/api"
 	"github.com/android-sms-gateway/ca/internal/csr"
 	"github.com/android-sms-gateway/ca/pkg/core/http"
@@ -29,8 +31,20 @@ var Module = fx.Module(
 		}
 	}),
 	fx.Provide(func(c Config) csr.Config {
+		caCert, err := os.ReadFile(c.CSR.CACertPath)
+		if err != nil {
+			panic(err)
+		}
+
+		caKey, err := os.ReadFile(c.CSR.CAKeyPath)
+		if err != nil {
+			panic(err)
+		}
+
 		return csr.Config{
-			TTL: c.CSR.TTL,
+			CACert: caCert,
+			CAKey:  caKey,
+			TTL:    c.CSR.TTL,
 		}
 	}),
 )
