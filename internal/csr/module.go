@@ -15,4 +15,9 @@ var Module = fx.Module(
 		return newRepository(redis, config.TTL)
 	}, fx.Private),
 	fx.Provide(NewService),
+	fx.Invoke(func(lc fx.Lifecycle, s *Service) {
+		lc.Append(fx.Hook{
+			OnStop: s.Stop,
+		})
+	}),
 )

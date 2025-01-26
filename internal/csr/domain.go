@@ -66,3 +66,9 @@ func (c CSRStatus) Status() client.CSRStatus {
 func (c CSRStatus) Certificate() string {
 	return c.certificate
 }
+
+type csrID string
+
+func (c csrID) Bytes() []byte {
+	return []byte(c)
+}
