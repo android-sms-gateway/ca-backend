@@ -44,7 +44,12 @@ func (c *csrHandler) status(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	return ctx.JSON(res)
+	return ctx.JSON(client.GetCSRStatusResponse{
+		RequestID:   res.ID(),
+		Status:      res.Status(),
+		Message:     res.Status().Description(),
+		Certificate: res.Certificate(),
+	})
 }
 
 func (c *csrHandler) Register(router fiber.Router) {
