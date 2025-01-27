@@ -76,6 +76,19 @@ func (r *repository) Get(ctx context.Context, requestId string) (CSRStatus, erro
 	return NewCSRStatus(requestId, res["content"], metadata, client.CSRStatus(status), res["certificate"], res["reason"]), nil
 }
 
+func (r *repository) SetCertificate(ctx context.Context, requestId string, certificate string) error {
+	key := "csr:" + requestId
+
+	_, err := r.redis.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.HSet(ctx, key, "certificate", certificate)
+		pipe.HSet(ctx, keyStatus, requestId, string(client.CSRStatusApproved))
+
+		return nil
+	})
+
+	return err
+}
+
 func newRepository(redis *redis.Client, ttl time.Duration) *repository {
 	if redis == nil {
 		panic("redis is required")

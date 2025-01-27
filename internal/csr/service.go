@@ -120,7 +120,7 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 
 	s.log.Info("signed certificate", zap.String("id", id), zap.String("csr", res.Certificate()), zap.String("cert", certPEM.String()))
 
-	return nil
+	return s.csrs.SetCertificate(ctx, id, certPEM.String())
 }
 
 func (s *Service) parseCsr(content string) (*x509.CertificateRequest, error) {
