@@ -92,9 +92,14 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 		return err
 	}
 
+	serialNumber, err := s.newSerialNumber(GroupWebhooks)
+	if err != nil {
+		return err
+	}
+
 	// Create a signed certificate
 	template := &x509.Certificate{
-		SerialNumber:          big.NewInt(1),
+		SerialNumber:          serialNumber,
 		Subject:               csr.Subject,
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
@@ -130,6 +135,16 @@ func (s *Service) parseCsr(content string) (*x509.CertificateRequest, error) {
 	}
 
 	return x509.ParseCertificateRequest(block.Bytes)
+}
+
+func (s *Service) newSerialNumber(prefix uint8) (*big.Int, error) {
+	serialNumberLimit := new(big.Int).
+		Lsh(big.NewInt(1), 120)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return nil, err
+	}
+	return serialNumber.Or(serialNumber, new(big.Int).Lsh(big.NewInt(int64(prefix)), 120)), nil
 }
 
 func NewService(csrs *repository, caCert *x509.Certificate, caKey any, log *zap.Logger) *Service {
