@@ -1,6 +1,6 @@
 services:
   server:
-    image: "ghcr.io/android-sms-gateway/ca:latest"
+    image: "ghcr.io/android-sms-gateway/ca-backend:latest"
     build:
       context: .
       target: final
@@ -9,6 +9,10 @@ services:
       - HTTP__PROXY_HEADER=X-Forwarded-For
       - HTTP__PROXIES=127.0.0.1
       - STORAGE__URL=redis://redis:6379/0
+      - CSR__CA_CERT_PATH=/etc/ca/ca.crt
+      - CSR__CA_KEY_PATH=/etc/ca/ca.key
+    volumes:
+      - ./ca:/etc/ca:ro
     ports:
       - 3000:3000
     depends_on:
