@@ -1,20 +1,37 @@
-name: Lint and Test
-on:
-  pull_request:
+name: Go
 
-permissions:
-  contents: read
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - "**.go"
+      - "go.mod"
+      - "go.sum"
+  pull_request:
+    branches: [master]
+    paths:
+      - "**.go"
+      - "go.mod"
+      - "go.sum"
 
 jobs:
   golangci:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      # step 1: checkout repository code
+      - name: Checkout code into workspace directory
+        uses: actions/checkout@v4
+
+      # step 2: set up go
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version: stable
-      - name: golangci-lint
+
+      # step 3: run golangci-lint
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
@@ -41,3 +58,9 @@ jobs:
       # step 4: run test
       - name: Run coverage
         run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      # step 5: upload coverage
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
