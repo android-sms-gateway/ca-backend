@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"github.com/android-sms-gateway/ca/internal/csr"
-	"github.com/android-sms-gateway/ca/pkg/client"
 	"github.com/android-sms-gateway/ca/pkg/core/handler"
+	"github.com/android-sms-gateway/client-go/ca"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
@@ -18,7 +18,7 @@ type csrHandler struct {
 }
 
 func (c *csrHandler) submit(ctx *fiber.Ctx) error {
-	req := client.PostCSRRequest{}
+	req := ca.PostCSRRequest{}
 	if err := c.BodyParserValidator(ctx, &req); err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	return ctx.JSON(client.PostCSRResponse{
+	return ctx.JSON(ca.PostCSRResponse{
 		RequestID:   res.ID(),
 		Status:      res.Status(),
 		Message:     res.Status().Description(),
@@ -44,7 +44,7 @@ func (c *csrHandler) status(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	return ctx.JSON(client.GetCSRStatusResponse{
+	return ctx.JSON(ca.GetCSRStatusResponse{
 		RequestID:   res.ID(),
 		Status:      res.Status(),
 		Message:     res.Status().Description(),

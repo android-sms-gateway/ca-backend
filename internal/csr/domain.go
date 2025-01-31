@@ -3,7 +3,7 @@ package csr
 import (
 	"encoding/json"
 
-	"github.com/android-sms-gateway/ca/pkg/client"
+	"github.com/android-sms-gateway/client-go/ca"
 )
 
 type CSR struct {
@@ -42,12 +42,12 @@ func (c CSR) toMap() map[string]string {
 type CSRStatus struct {
 	CSR
 	id          string
-	status      client.CSRStatus
+	status      ca.CSRStatus
 	certificate string
 	reason      string
 }
 
-func NewCSRStatus(id string, content string, metadata map[string]string, status client.CSRStatus, certificate string, reason string) CSRStatus {
+func NewCSRStatus(id string, content string, metadata map[string]string, status ca.CSRStatus, certificate string, reason string) CSRStatus {
 	return CSRStatus{
 		CSR: CSR{
 			content:  content,
@@ -64,7 +64,7 @@ func (c CSRStatus) ID() string {
 	return c.id
 }
 
-func (c CSRStatus) Status() client.CSRStatus {
+func (c CSRStatus) Status() ca.CSRStatus {
 	return c.status
 }
 

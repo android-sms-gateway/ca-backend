@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/android-sms-gateway/ca/pkg/client"
+	"github.com/android-sms-gateway/client-go/ca"
 	"github.com/golang-queue/queue"
 	"github.com/golang-queue/queue/core"
 	"github.com/jaevor/go-nanoid"
@@ -62,7 +62,7 @@ func (s *Service) Create(ctx context.Context, csr CSR) (CSRStatus, error) {
 		s.log.Error("failed to queue csr", zap.Error(err))
 	}
 
-	return NewCSRStatus(id, csr.content, csr.metadata, client.CSRStatusPending, "", ""), nil
+	return NewCSRStatus(id, csr.content, csr.metadata, ca.CSRStatusPending, "", ""), nil
 }
 
 func (s *Service) Get(ctx context.Context, id string) (CSRStatus, error) {
@@ -83,7 +83,7 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 		return err
 	}
 
-	if res.Status() != client.CSRStatusPending {
+	if res.Status() != ca.CSRStatusPending {
 		return nil
 	}
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/android-sms-gateway/ca/pkg/client"
+	"github.com/android-sms-gateway/client-go/ca"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -22,7 +22,7 @@ type repository struct {
 }
 
 func (r *repository) Insert(ctx context.Context, requestId string, csr CSR) error {
-	res := r.redis.HSetNX(ctx, keyStatus, requestId, string(client.CSRStatusPending))
+	res := r.redis.HSetNX(ctx, keyStatus, requestId, string(ca.CSRStatusPending))
 	if err := res.Err(); err != nil {
 		return fmt.Errorf("failed to create csr: %w", err)
 	}
@@ -73,7 +73,7 @@ func (r *repository) Get(ctx context.Context, requestId string) (CSRStatus, erro
 		return CSRStatus{}, fmt.Errorf("failed to get csr: %w", err)
 	}
 
-	return NewCSRStatus(requestId, res["content"], metadata, client.CSRStatus(status), res["certificate"], res["reason"]), nil
+	return NewCSRStatus(requestId, res["content"], metadata, ca.CSRStatus(status), res["certificate"], res["reason"]), nil
 }
 
 func (r *repository) SetCertificate(ctx context.Context, requestId string, certificate string) error {
@@ -81,7 +81,7 @@ func (r *repository) SetCertificate(ctx context.Context, requestId string, certi
 
 	_, err := r.redis.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 		pipe.HSet(ctx, key, "certificate", certificate)
-		pipe.HSet(ctx, keyStatus, requestId, string(client.CSRStatusApproved))
+		pipe.HSet(ctx, keyStatus, requestId, string(ca.CSRStatusApproved))
 
 		return nil
 	})
