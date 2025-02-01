@@ -16,7 +16,7 @@ import "github.com/android-sms-gateway/ca/internal"
 
 //	@host		ca.sms-gate.app
 //	@BasePath	/api/v1
-//  @schemes	https
+//	@schemes	https
 
 func main() {
 	internal.Run()

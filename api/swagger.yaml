@@ -1,4 +1,77 @@
 basePath: /api/v1
+definitions:
+  ca.CSRStatus:
+    enum:
+    - pending
+    - approved
+    - denied
+    type: string
+    x-enum-varnames:
+    - CSRStatusPending
+    - CSRStatusApproved
+    - CSRStatusDenied
+  ca.GetCSRStatusResponse:
+    properties:
+      certificate:
+        description: |-
+          Certificate is the certificate issued by the CA. This field is only present
+          if the status is `approved`.
+        type: string
+      message:
+        description: Message is a human-readable description of the status.
+        type: string
+      request_id:
+        description: RequestID is the ID of the request. Can be used to request status.
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/ca.CSRStatus'
+        description: Status is the status of the requested certificate.
+    type: object
+  ca.PostCSRRequest:
+    properties:
+      content:
+        description: Content contains the CSR content and is required.
+        maxLength: 16384
+        type: string
+      metadata:
+        additionalProperties:
+          type: string
+        description: Metadata includes additional metadata related to the CSR.
+        type: object
+    required:
+    - content
+    type: object
+  ca.PostCSRResponse:
+    properties:
+      certificate:
+        description: |-
+          Certificate is the certificate issued by the CA. This field is only present
+          if the status is `approved`.
+        type: string
+      message:
+        description: Message is a human-readable description of the status.
+        type: string
+      request_id:
+        description: RequestID is the ID of the request. Can be used to request status.
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/ca.CSRStatus'
+        description: Status is the status of the requested certificate.
+    type: object
+  http.JSONErrorResponse:
+    properties:
+      error:
+        properties:
+          code:
+            description: Code
+            type: integer
+          message:
+            description: Message
+            type: string
+        type: object
+    type: object
 host: ca.sms-gate.app
 info:
   contact:
@@ -9,8 +82,69 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: SMS Gate Certificate Authority API
-  version: "{{VERSION}}"
-paths: {}
+  version: '{{VERSION}}'
+paths:
+  /csr:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ca.PostCSRRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ca.PostCSRResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.JSONErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.JSONErrorResponse'
+      summary: Submit CSR
+      tags:
+      - CSR
+  /csr/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ca.GetCSRStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.JSONErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.JSONErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.JSONErrorResponse'
+      summary: Get CSR Status
+      tags:
+      - CSR
 schemes:
-  - https
+- https
 swagger: "2.0"

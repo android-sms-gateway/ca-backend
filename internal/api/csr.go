@@ -17,6 +17,17 @@ type csrHandler struct {
 	csrSvc *csr.Service
 }
 
+//	@Summary	Submit CSR
+//	@Tags		CSR
+//	@Accept		json
+//	@Produce	json
+//	@Param		request	body		ca.PostCSRRequest	true	"Request"
+//	@Success	200		{object}	ca.PostCSRResponse
+//	@Failure	400		{object}	http.JSONErrorResponse
+//	@Failure	500		{object}	http.JSONErrorResponse
+//	@Router		/csr [post]
+//
+// Submit CSR
 func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 	req := ca.PostCSRRequest{}
 	if err := c.BodyParserValidator(ctx, &req); err != nil {
@@ -36,6 +47,18 @@ func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 	})
 }
 
+//	@Summary	Get CSR Status
+//	@Tags		CSR
+//	@Accept		json
+//	@Produce	json
+//	@Param		id	path		string	true	"Request ID"
+//	@Success	200	{object}	ca.GetCSRStatusResponse
+//	@Failure	400	{object}	http.JSONErrorResponse
+//	@Failure	404	{object}	http.JSONErrorResponse
+//	@Failure	500	{object}	http.JSONErrorResponse
+//	@Router		/csr/{id} [get]
+//
+// Get CSR Status
 func (c *csrHandler) status(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 
