@@ -5,6 +5,7 @@ import (
 	"github.com/android-sms-gateway/ca/pkg/core/http/jsonify"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/swagger"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -24,12 +25,17 @@ var Module = fx.Module(
 	}),
 	fx.Provide(newCSR, fx.Private),
 	fx.Invoke(func(app *fiber.App, csr *csrHandler, config Config) {
-		api := app.Group("/api/v1")
-
 		apidoc.SwaggerInfo.Version = version.AppVersion
-		api.Get("/docs/*", swagger.New(swagger.Config{
-			Layout: "BaseLayout",
-		}))
+		app.Use("/docs/*",
+			etag.New(etag.Config{
+				Weak: true,
+			}),
+			swagger.New(swagger.Config{
+				Layout: "BaseLayout",
+			}),
+		)
+
+		api := app.Group("/api/v1")
 
 		if config.CORSAllowOrigins != "" {
 			api.Use(cors.New(cors.Config{
@@ -43,7 +49,7 @@ var Module = fx.Module(
 
 		csr.Register(api.Group("csr"))
 
-		api.Use(func(ctx *fiber.Ctx) error {
+		app.Use(func(ctx *fiber.Ctx) error {
 			return ctx.SendStatus(fiber.StatusNotFound)
 		})
 	}),
