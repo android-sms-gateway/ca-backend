@@ -22,7 +22,7 @@ type csrHandler struct {
 //	@Accept		json
 //	@Produce	json
 //	@Param		request	body		ca.PostCSRRequest	true	"Request"
-//	@Success	200		{object}	ca.PostCSRResponse
+//	@Success	202		{object}	ca.PostCSRResponse
 //	@Failure	400		{object}	http.JSONErrorResponse
 //	@Failure	500		{object}	http.JSONErrorResponse
 //	@Router		/csr [post]
@@ -39,12 +39,14 @@ func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	return ctx.JSON(ca.PostCSRResponse{
-		RequestID:   res.ID(),
-		Status:      res.Status(),
-		Message:     res.Status().Description(),
-		Certificate: res.Certificate(),
-	})
+	return ctx.
+		Status(fiber.StatusAccepted).
+		JSON(ca.PostCSRResponse{
+			RequestID:   res.ID(),
+			Status:      res.Status(),
+			Message:     res.Status().Description(),
+			Certificate: res.Certificate(),
+		})
 }
 
 //	@Summary	Get CSR Status
