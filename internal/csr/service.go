@@ -62,7 +62,7 @@ func (s *Service) Create(ctx context.Context, csr CSR) (CSRStatus, error) {
 		s.log.Error("failed to queue csr", zap.Error(err))
 	}
 
-	return NewCSRStatus(id, csr.content, csr.metadata, ca.CSRStatusPending, "", ""), nil
+	return NewCSRStatus(id, csr.csrType, csr.content, csr.metadata, ca.CSRStatusPending, "", ""), nil
 }
 
 func (s *Service) Get(ctx context.Context, id string) (CSRStatus, error) {
@@ -92,7 +92,12 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 		return err
 	}
 
-	serialNumber, err := s.newSerialNumber(GroupWebhooks)
+	prefix, ok := csrTypeToPrefix[res.csrType]
+	if !ok {
+		return fmt.Errorf("unknown csr type: %s", res.csrType)
+	}
+
+	serialNumber, err := s.newSerialNumber(prefix)
 	if err != nil {
 		return err
 	}
@@ -137,7 +142,7 @@ func (s *Service) parseCsr(content string) (*x509.CertificateRequest, error) {
 	return x509.ParseCertificateRequest(block.Bytes)
 }
 
-func (s *Service) newSerialNumber(prefix uint8) (*big.Int, error) {
+func (s *Service) newSerialNumber(prefix SerialNumberPrefix) (*big.Int, error) {
 	serialNumberLimit := new(big.Int).
 		Lsh(big.NewInt(1), 120)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)

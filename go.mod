@@ -3,7 +3,8 @@ module github.com/android-sms-gateway/ca
 go 1.23.2
 
 require (
-	github.com/android-sms-gateway/client-go v1.5.0
+	github.com/android-sms-gateway/client-go v1.5.5
+	github.com/go-playground/assert/v2 v2.2.0
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/gofiber/contrib/fiberzap/v2 v2.1.4
 	github.com/gofiber/fiber/v2 v2.52.6

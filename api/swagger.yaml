@@ -10,6 +10,14 @@ definitions:
     - CSRStatusPending
     - CSRStatusApproved
     - CSRStatusDenied
+  ca.CSRType:
+    enum:
+    - webhook
+    - private_server
+    type: string
+    x-enum-varnames:
+    - CSRTypeWebhook
+    - CSRTypePrivateServer
   ca.GetCSRStatusResponse:
     properties:
       certificate:
@@ -27,6 +35,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/ca.CSRStatus'
         description: Status is the status of the requested certificate.
+      type:
+        allOf:
+        - $ref: '#/definitions/ca.CSRType'
+        description: Type is the type of the requested certificate.
     type: object
   ca.PostCSRRequest:
     properties:
@@ -39,6 +51,11 @@ definitions:
           type: string
         description: Metadata includes additional metadata related to the CSR.
         type: object
+      type:
+        allOf:
+        - $ref: '#/definitions/ca.CSRType'
+        default: webhook
+        description: Type is the type of the CSR. By default, it is set to "webhook".
     required:
     - content
     type: object
@@ -59,6 +76,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/ca.CSRStatus'
         description: Status is the status of the requested certificate.
+      type:
+        allOf:
+        - $ref: '#/definitions/ca.CSRType'
+        description: Type is the type of the requested certificate.
     type: object
   http.JSONErrorResponse:
     properties:

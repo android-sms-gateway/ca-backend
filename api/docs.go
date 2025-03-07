@@ -131,6 +131,17 @@ const docTemplate = `{
                 "CSRStatusDenied"
             ]
         },
+        "ca.CSRType": {
+            "type": "string",
+            "enum": [
+                "webhook",
+                "private_server"
+            ],
+            "x-enum-varnames": [
+                "CSRTypeWebhook",
+                "CSRTypePrivateServer"
+            ]
+        },
         "ca.GetCSRStatusResponse": {
             "type": "object",
             "properties": {
@@ -153,6 +164,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/ca.CSRStatus"
                         }
                     ]
+                },
+                "type": {
+                    "description": "Type is the type of the requested certificate.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ca.CSRType"
+                        }
+                    ]
                 }
             }
         },
@@ -173,6 +192,15 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "type": {
+                    "description": "Type is the type of the CSR. By default, it is set to \"webhook\".",
+                    "default": "webhook",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ca.CSRType"
+                        }
+                    ]
                 }
             }
         },
@@ -196,6 +224,14 @@ const docTemplate = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/ca.CSRStatus"
+                        }
+                    ]
+                },
+                "type": {
+                    "description": "Type is the type of the requested certificate.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ca.CSRType"
                         }
                     ]
                 }

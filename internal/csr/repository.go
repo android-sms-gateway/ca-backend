@@ -73,7 +73,7 @@ func (r *repository) Get(ctx context.Context, requestId string) (CSRStatus, erro
 		return CSRStatus{}, fmt.Errorf("failed to get csr: %w", err)
 	}
 
-	return NewCSRStatus(requestId, res["content"], metadata, ca.CSRStatus(status), res["certificate"], res["reason"]), nil
+	return NewCSRStatus(requestId, ca.CSRType(res["type"]), res["content"], metadata, ca.CSRStatus(status), res["certificate"], res["reason"]), nil
 }
 
 func (r *repository) SetCertificate(ctx context.Context, requestId string, certificate string) error {
