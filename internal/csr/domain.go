@@ -7,15 +7,25 @@ import (
 )
 
 type CSR struct {
+	csrType  ca.CSRType
 	content  string
 	metadata map[string]string
 }
 
-func NewCSR(content string, metadata map[string]string) CSR {
+func NewCSR(csrType ca.CSRType, content string, metadata map[string]string) CSR {
+	if csrType == "" {
+		csrType = ca.CSRTypeWebhook
+	}
+
 	return CSR{
+		csrType:  csrType,
 		content:  content,
 		metadata: metadata,
 	}
+}
+
+func (c CSR) Type() ca.CSRType {
+	return c.csrType
 }
 
 func (c CSR) Content() string {
@@ -34,6 +44,7 @@ func (c CSR) toMap() map[string]string {
 	}
 
 	return map[string]string{
+		"type":     string(c.csrType),
 		"content":  c.content,
 		"metadata": metadata,
 	}
@@ -47,9 +58,10 @@ type CSRStatus struct {
 	reason      string
 }
 
-func NewCSRStatus(id string, content string, metadata map[string]string, status ca.CSRStatus, certificate string, reason string) CSRStatus {
+func NewCSRStatus(id string, csrType ca.CSRType, content string, metadata map[string]string, status ca.CSRStatus, certificate string, reason string) CSRStatus {
 	return CSRStatus{
 		CSR: CSR{
+			csrType:  csrType,
 			content:  content,
 			metadata: metadata,
 		},

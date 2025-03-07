@@ -34,19 +34,14 @@ func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	res, err := c.csrSvc.Create(ctx.Context(), csr.NewCSR(req.Content, req.Metadata))
+	res, err := c.csrSvc.Create(ctx.Context(), csr.NewCSR(req.Type, req.Content, req.Metadata))
 	if err != nil {
 		return err
 	}
 
 	return ctx.
 		Status(fiber.StatusAccepted).
-		JSON(ca.PostCSRResponse{
-			RequestID:   res.ID(),
-			Status:      res.Status(),
-			Message:     res.Status().Description(),
-			Certificate: res.Certificate(),
-		})
+		JSON(csrStatusToResponse(res))
 }
 
 //	@Summary	Get CSR Status
@@ -69,17 +64,10 @@ func (c *csrHandler) status(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	return ctx.JSON(ca.GetCSRStatusResponse{
-		RequestID:   res.ID(),
-		Status:      res.Status(),
-		Message:     res.Status().Description(),
-		Certificate: res.Certificate(),
-	})
+	return ctx.JSON(csrStatusToResponse(res))
 }
 
 func (c *csrHandler) Register(router fiber.Router) {
-	// router.Use(limiter.New(1, time.Minute))
-
 	router.Use(c.handleError)
 
 	router.Post("", c.submit)
