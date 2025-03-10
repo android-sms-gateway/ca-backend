@@ -128,6 +128,17 @@
                 "CSRStatusDenied"
             ]
         },
+        "ca.CSRType": {
+            "type": "string",
+            "enum": [
+                "webhook",
+                "private_server"
+            ],
+            "x-enum-varnames": [
+                "CSRTypeWebhook",
+                "CSRTypePrivateServer"
+            ]
+        },
         "ca.GetCSRStatusResponse": {
             "type": "object",
             "properties": {
@@ -150,6 +161,14 @@
                             "$ref": "#/definitions/ca.CSRStatus"
                         }
                     ]
+                },
+                "type": {
+                    "description": "Type is the type of the requested certificate.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ca.CSRType"
+                        }
+                    ]
                 }
             }
         },
@@ -170,6 +189,15 @@
                     "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "type": {
+                    "description": "Type is the type of the CSR. By default, it is set to \"webhook\".",
+                    "default": "webhook",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ca.CSRType"
+                        }
+                    ]
                 }
             }
         },
@@ -193,6 +221,14 @@
                     "allOf": [
                         {
                             "$ref": "#/definitions/ca.CSRStatus"
+                        }
+                    ]
+                },
+                "type": {
+                    "description": "Type is the type of the requested certificate.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ca.CSRType"
                         }
                     ]
                 }
