@@ -13,7 +13,7 @@ require (
 	github.com/jaevor/go-nanoid v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/swaggo/swag v1.16.4
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
