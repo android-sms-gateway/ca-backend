@@ -58,6 +58,9 @@ jobs:
   deploy:
     needs: docker
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     environment: production
     concurrency: production
     env:
