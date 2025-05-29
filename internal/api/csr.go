@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"github.com/android-sms-gateway/ca/internal/csr"
-	"github.com/android-sms-gateway/ca/pkg/core/handler"
 	"github.com/android-sms-gateway/client-go/ca"
+	"github.com/android-sms-gateway/core/handler"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
@@ -23,8 +23,8 @@ type csrHandler struct {
 //	@Produce	json
 //	@Param		request	body		ca.PostCSRRequest	true	"Request"
 //	@Success	202		{object}	ca.PostCSRResponse
-//	@Failure	400		{object}	http.JSONErrorResponse
-//	@Failure	500		{object}	http.JSONErrorResponse
+//	@Failure	400		{object}	http.ErrorResponse
+//	@Failure	500		{object}	http.ErrorResponse
 //	@Router		/csr [post]
 //
 // Submit CSR
@@ -50,9 +50,9 @@ func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 //	@Produce	json
 //	@Param		id	path		string	true	"Request ID"
 //	@Success	200	{object}	ca.GetCSRStatusResponse
-//	@Failure	400	{object}	http.JSONErrorResponse
-//	@Failure	404	{object}	http.JSONErrorResponse
-//	@Failure	500	{object}	http.JSONErrorResponse
+//	@Failure	400	{object}	http.ErrorResponse
+//	@Failure	404	{object}	http.ErrorResponse
+//	@Failure	500	{object}	http.ErrorResponse
 //	@Router		/csr/{id} [get]
 //
 // Get CSR Status

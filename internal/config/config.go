@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/android-sms-gateway/ca/pkg/core/config"
+	"github.com/android-sms-gateway/core/config"
 )
 
 type HttpConfig struct {
