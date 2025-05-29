@@ -5,8 +5,8 @@ import (
 
 	"github.com/android-sms-gateway/ca/internal/api"
 	"github.com/android-sms-gateway/ca/internal/csr"
-	"github.com/android-sms-gateway/ca/pkg/core/http"
-	"github.com/android-sms-gateway/ca/pkg/core/redis"
+	"github.com/android-sms-gateway/core/http"
+	"github.com/android-sms-gateway/core/redis"
 	"go.uber.org/fx"
 )
 

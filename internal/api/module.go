@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/android-sms-gateway/ca/pkg/core/http"
-	"github.com/android-sms-gateway/ca/pkg/core/http/jsonify"
+	"github.com/android-sms-gateway/core/http"
+	"github.com/android-sms-gateway/core/http/jsonify"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/etag"
