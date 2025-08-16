@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/android-sms-gateway/core/http"
 	"github.com/android-sms-gateway/core/http/jsonify"
+	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/etag"
@@ -34,6 +35,10 @@ var Module = fx.Module(
 				Layout: "BaseLayout",
 			}),
 		)
+
+		metrics := fiberprometheus.New("")
+		metrics.RegisterAt(app, "/metrics")
+		app.Use(metrics.Middleware)
 
 		api := app.Group("/api/v1")
 
