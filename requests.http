@@ -14,3 +14,6 @@ Content-Type: application/json
 
 ###
 GET {{baseUrl}}/csr/06xD5pQPeRDzu1uQvFVk2 HTTP/1.1
+
+###
+GET http://localhost:3000/metrics HTTP/1.1
