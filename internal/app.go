@@ -26,9 +26,9 @@ func Run() {
 		validator.Module,
 		redis.Module,
 
-		config.Module,
-		api.Module,
-		csr.Module,
+		config.Module(),
+		api.Module(),
+		csr.Module(),
 	).
 		Run()
 }

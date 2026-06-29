@@ -4,6 +4,8 @@
 GET {{baseUrl}}/docs HTTP/1.1
 
 ###
+# @name postCSR
+@csrRequestID={{postCSR.response.body.$.request_id}}
 POST {{baseUrl}}/csr HTTP/1.1
 Content-Type: application/json
 
@@ -13,7 +15,7 @@ Content-Type: application/json
 }
 
 ###
-GET {{baseUrl}}/csr/06xD5pQPeRDzu1uQvFVk2 HTTP/1.1
+GET {{baseUrl}}/csr/{{csrRequestID}} HTTP/1.1
 
 ###
 GET http://localhost:3000/metrics HTTP/1.1

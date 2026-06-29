@@ -5,7 +5,7 @@ import (
 	"github.com/android-sms-gateway/client-go/ca"
 )
 
-func csrStatusToResponse(status csr.CSRStatus) ca.PostCSRResponse {
+func csrStatusToResponse(status csr.Status) ca.PostCSRResponse {
 	return ca.PostCSRResponse{
 		RequestID:   status.ID(),
 		Type:        status.Type(),

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/android-sms-gateway/core/http"
 	"github.com/android-sms-gateway/core/http/jsonify"
 	"github.com/ansrivas/fiberprometheus/v2"
@@ -15,47 +17,51 @@ import (
 	"github.com/android-sms-gateway/ca/internal/version"
 )
 
-var Module = fx.Module(
-	"api",
-	fx.Decorate(func(log *zap.Logger) *zap.Logger {
-		return log.Named("api")
-	}),
-	fx.Provide(http.NewJSONErrorHandler),
-	fx.Provide(func(log *zap.Logger) http.Options {
-		return *(&http.Options{}).WithErrorHandler(http.NewJSONErrorHandler(log))
-	}),
-	fx.Provide(newCSR, fx.Private),
-	fx.Invoke(func(app *fiber.App, csr *csrHandler, config Config) {
-		apidoc.SwaggerInfo.Version = version.AppVersion
-		app.Use("/docs/*",
-			etag.New(etag.Config{
-				Weak: true,
-			}),
-			swagger.New(swagger.Config{
-				Layout: "BaseLayout",
-			}),
-		)
+func Module() fx.Option {
+	const duration24hours = 24 * time.Hour
 
-		metrics := fiberprometheus.New("")
-		metrics.RegisterAt(app, "/metrics")
-		app.Use(metrics.Middleware)
+	return fx.Module(
+		"api",
+		fx.Decorate(func(log *zap.Logger) *zap.Logger {
+			return log.Named("api")
+		}),
+		fx.Provide(http.NewJSONErrorHandler),
+		fx.Provide(func(log *zap.Logger) http.Options {
+			return *(&http.Options{}).WithErrorHandler(http.NewJSONErrorHandler(log))
+		}),
+		fx.Provide(newCSR, fx.Private),
+		fx.Invoke(func(app *fiber.App, csr *csrHandler, config Config) {
+			apidoc.SwaggerInfo.Version = version.AppVersion
+			app.Use("/docs/*",
+				etag.New(etag.Config{
+					Weak: true,
+				}),
+				swagger.New(swagger.Config{
+					Layout: "BaseLayout",
+				}),
+			)
 
-		api := app.Group("/api/v1")
+			metrics := fiberprometheus.New("")
+			metrics.RegisterAt(app, "/metrics")
+			app.Use(metrics.Middleware)
 
-		if config.CORSAllowOrigins != "" {
-			api.Use(cors.New(cors.Config{
-				AllowOrigins:     config.CORSAllowOrigins,
-				AllowCredentials: true,
-				MaxAge:           86400,
-			}))
-		}
+			api := app.Group("/api/v1")
 
-		api.Use(jsonify.New())
+			if config.CORSAllowOrigins != "" {
+				api.Use(cors.New(cors.Config{
+					AllowOrigins:     config.CORSAllowOrigins,
+					AllowCredentials: true,
+					MaxAge:           int(duration24hours.Seconds()),
+				}))
+			}
 
-		csr.Register(api.Group("csr"))
+			api.Use(jsonify.New())
 
-		app.Use(func(ctx *fiber.Ctx) error {
-			return ctx.SendStatus(fiber.StatusNotFound)
-		})
-	}),
-)
+			csr.Register(api.Group("csr"))
+
+			app.Use(func(ctx *fiber.Ctx) error {
+				return ctx.SendStatus(fiber.StatusNotFound)
+			})
+		}),
+	)
+}

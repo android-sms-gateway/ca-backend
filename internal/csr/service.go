@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"math/big"
 	"runtime"
@@ -19,6 +18,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const serialNumberLength = 120
+
 type Service struct {
 	csrs *repository
 
@@ -30,46 +31,85 @@ type Service struct {
 	log   *zap.Logger
 }
 
-func (s *Service) Create(ctx context.Context, csr CSR) (CSRStatus, error) {
+func NewService(csrs *repository, caCert *x509.Certificate, caKey any, log *zap.Logger) *Service {
+	if csrs == nil {
+		panic("csrs is required")
+	}
+
+	if caCert == nil {
+		panic("caCert is required")
+	}
+
+	if caKey == nil {
+		panic("caKey is required")
+	}
+
+	if log == nil {
+		panic("log is required")
+	}
+
+	newid, _ := nanoid.Canonic()
+
+	s := &Service{
+		csrs: csrs,
+
+		caCert: caCert,
+		caKey:  caKey,
+
+		queue: nil,
+		newid: newid,
+		log:   log,
+	}
+
+	s.queue = queue.NewPool(
+		int64(runtime.GOMAXPROCS(0)),
+		queue.WithFn(s.process),
+		queue.WithLogger(log.Sugar()),
+	)
+
+	return s
+}
+
+func (s *Service) Create(ctx context.Context, csr CSR) (Status, error) {
 	req, err := s.parseCsr(csr.content)
 	if err != nil {
 		s.log.Error("failed to parse csr", zap.Error(err))
-		return CSRStatus{}, fmt.Errorf("%w: %s", ErrCSRInvalid, err)
+		return Status{}, fmt.Errorf("%w: %w", ErrCSRInvalid, err)
 	}
 
 	if len(req.IPAddresses) != 1 {
 		s.log.Error("invalid csr", zap.Any("csr", req))
-		return CSRStatus{}, fmt.Errorf("%w: should have exactly one IP address", ErrCSRInvalid)
+		return Status{}, fmt.Errorf("%w: should have exactly one IP address", ErrCSRInvalid)
 	}
 
 	if req.Subject.CommonName != req.IPAddresses[0].String() {
 		s.log.Error("invalid csr", zap.Any("csr", req))
-		return CSRStatus{}, fmt.Errorf("%w: common name and IP address should be the same", ErrCSRInvalid)
+		return Status{}, fmt.Errorf("%w: common name and IP address should be the same", ErrCSRInvalid)
 	}
 
 	if !req.IPAddresses[0].IsPrivate() {
 		s.log.Error("invalid csr", zap.Any("csr", req))
-		return CSRStatus{}, fmt.Errorf("%w: IP address should be private", ErrCSRInvalid)
+		return Status{}, fmt.Errorf("%w: IP address should be private", ErrCSRInvalid)
 	}
 
 	id := s.newid()
-	if err := s.csrs.Insert(ctx, id, csr); err != nil {
-		s.log.Error("failed to create csr", zap.Error(err))
-		return CSRStatus{}, err
+	if insErr := s.csrs.Insert(ctx, id, csr); insErr != nil {
+		s.log.Error("failed to create csr", zap.Error(insErr))
+		return Status{}, insErr
 	}
 
-	if err := s.queue.Queue(csrID(id)); err != nil {
-		s.log.Error("failed to queue csr", zap.Error(err))
+	if queueErr := s.queue.Queue(csrID(id)); queueErr != nil {
+		s.log.Error("failed to queue csr", zap.Error(queueErr))
 	}
 
 	return NewCSRStatus(id, csr.csrType, csr.content, csr.metadata, ca.CSRStatusPending, "", ""), nil
 }
 
-func (s *Service) Get(ctx context.Context, id string) (CSRStatus, error) {
+func (s *Service) Get(ctx context.Context, id string) (Status, error) {
 	return s.csrs.Get(ctx, id)
 }
 
-func (s *Service) Stop(ctx context.Context) error {
+func (s *Service) Stop(_ context.Context) error {
 	s.queue.Release()
 
 	return nil
@@ -94,7 +134,7 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 
 	prefix, ok := csrTypeToPrefix[res.csrType]
 	if !ok {
-		return fmt.Errorf("unknown csr type: %s", res.csrType)
+		return fmt.Errorf("%w: unknown csr type: %s", ErrCSRInvalid, res.csrType)
 	}
 
 	serialNumber, err := s.newSerialNumber(prefix)
@@ -124,11 +164,16 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 
 	// Encode the signed certificate to PEM format
 	var certPEM strings.Builder
-	if err := pem.Encode(&certPEM, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes}); err != nil {
-		return fmt.Errorf("failed to encode certificate: %w", err)
+	if encErr := pem.Encode(&certPEM, &pem.Block{Type: "CERTIFICATE", Headers: nil, Bytes: certBytes}); encErr != nil {
+		return fmt.Errorf("failed to encode certificate: %w", encErr)
 	}
 
-	s.log.Info("signed certificate", zap.String("id", id), zap.String("csr", res.Certificate()), zap.String("cert", certPEM.String()))
+	s.log.Info(
+		"signed certificate",
+		zap.String("id", id),
+		zap.String("csr", res.Certificate()),
+		zap.String("cert", certPEM.String()),
+	)
 
 	return s.csrs.SetCertificate(ctx, id, certPEM.String())
 }
@@ -136,56 +181,26 @@ func (s *Service) process(ctx context.Context, m core.TaskMessage) error {
 func (s *Service) parseCsr(content string) (*x509.CertificateRequest, error) {
 	block, _ := pem.Decode([]byte(content))
 	if block == nil || block.Type != "CERTIFICATE REQUEST" {
-		return nil, errors.New("can't decode PEM block or invalid block type")
+		return nil, fmt.Errorf("%w: can't decode PEM block or invalid block type", ErrCSRInvalid)
 	}
 
-	return x509.ParseCertificateRequest(block.Bytes)
+	req, err := x509.ParseCertificateRequest(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse csr: %w", err)
+	}
+
+	return req, nil
 }
 
 func (s *Service) newSerialNumber(prefix SerialNumberPrefix) (*big.Int, error) {
 	serialNumberLimit := new(big.Int).
-		Lsh(big.NewInt(1), 120)
+		Lsh(big.NewInt(1), serialNumberLength)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
-	return serialNumber.Or(serialNumber, new(big.Int).Lsh(big.NewInt(int64(prefix)), 120)), nil
-}
-
-func NewService(csrs *repository, caCert *x509.Certificate, caKey any, log *zap.Logger) *Service {
-	if csrs == nil {
-		panic("csrs is required")
-	}
-
-	if caCert == nil {
-		panic("caCert is required")
-	}
-
-	if caKey == nil {
-		panic("caKey is required")
-	}
-
-	if log == nil {
-		panic("log is required")
-	}
-
-	newid, _ := nanoid.Canonic()
-
-	s := &Service{
-		csrs: csrs,
-
-		caCert: caCert,
-		caKey:  caKey,
-
-		newid: newid,
-		log:   log,
-	}
-
-	s.queue = queue.NewPool(
-		int64(runtime.GOMAXPROCS(0)),
-		queue.WithFn(s.process),
-		queue.WithLogger(log.Sugar()),
-	)
-
-	return s
+	return serialNumber.Or(
+		serialNumber,
+		new(big.Int).Lsh(big.NewInt(int64(prefix)), serialNumberLength),
+	), nil
 }

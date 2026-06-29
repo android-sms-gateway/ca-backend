@@ -9,6 +9,7 @@ const (
 	PrefixPrivateServers SerialNumberPrefix = 2
 )
 
+//nolint:gochecknoglobals // Static data
 var csrTypeToPrefix = map[ca.CSRType]SerialNumberPrefix{
 	ca.CSRTypeWebhook:       PrefixWebhooks,
 	ca.CSRTypePrivateServer: PrefixPrivateServers,

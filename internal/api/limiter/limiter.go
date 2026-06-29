@@ -10,13 +10,13 @@ import (
 // New returns a middleware that limits the number of requests from a client
 // in a given duration.
 //
-// max is the maximum number of requests allowed in the duration.
+// limit is the maximum number of requests allowed in the duration.
 // duration is the duration of the limit.
 //
-// If max is less than or equal to 0 or duration is less than or equal to 0,
+// If limit is less than or equal to 0 or duration is less than or equal to 0,
 // a panic occurs.
-func New(max int, duration time.Duration) fiber.Handler {
-	if max <= 0 {
+func New(limit int, duration time.Duration) fiber.Handler {
+	if limit <= 0 {
 		panic("max must be greater than 0")
 	}
 	if duration <= 0 {
@@ -24,7 +24,7 @@ func New(max int, duration time.Duration) fiber.Handler {
 	}
 
 	return limiter.New(limiter.Config{
-		Max:                max,
+		Max:                limit,
 		SkipFailedRequests: true,
 		Expiration:         duration,
 	})
