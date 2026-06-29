@@ -1,53 +1,73 @@
 package config
 
 import (
+	"fmt"
+	"os"
 	"time"
 
-	"github.com/android-sms-gateway/core/config"
+	"github.com/go-core-fx/config"
 )
 
-type HttpConfig struct {
-	Address     string   `envconfig:"HTTP__ADDRESS"`
-	ProxyHeader string   `envconfig:"HTTP__PROXY_HEADER"`
-	Proxies     []string `envconfig:"HTTP__PROXIES"`
+type httpConfig struct {
+	Address     string   `koanf:"address"`
+	ProxyHeader string   `koanf:"proxy_header"`
+	Proxies     []string `koanf:"proxies"`
 }
 
-type APIConfig struct {
-	CORSAllowOrigins string `envconfig:"API__CORS_ALLOW_ORIGINS"`
+type apiConfig struct {
+	CORSAllowOrigins string `koanf:"cors_allow_origins"`
 }
 
-type StorageConfig struct {
-	URL string `envconfig:"STORAGE__URL"`
+type storageConfig struct {
+	URL string `koanf:"url"`
 }
 
-type CSR struct {
-	TTL        time.Duration `envconfig:"CSR__TTL"`
-	CACertPath string        `envconfig:"CSR__CA_CERT_PATH" required:"true"`
-	CAKeyPath  string        `envconfig:"CSR__CA_KEY_PATH" required:"true"`
+type csrConfig struct {
+	TTL        time.Duration `koanf:"ttl"`
+	CACertPath string        `koanf:"ca_cert_path"`
+	CAKeyPath  string        `koanf:"ca_key_path"`
 }
 
 type Config struct {
-	Http    HttpConfig
-	API     APIConfig
-	Storage StorageConfig
-	CSR     CSR
+	HTTP    httpConfig    `koanf:"http"`
+	API     apiConfig     `koanf:"api"`
+	Storage storageConfig `koanf:"storage"`
+	CSR     csrConfig     `koanf:"csr"`
 }
 
-var instance = Config{
-	Http: HttpConfig{
-		Address: "127.0.0.1:3000",
-	},
-	API: APIConfig{
-		CORSAllowOrigins: "",
-	},
-	Storage: StorageConfig{
-		URL: "redis://localhost:6379/0",
-	},
-	CSR: CSR{
-		TTL: 24 * time.Hour,
-	},
+func Default() Config {
+	//nolint:mnd //default values
+	return Config{
+		HTTP: httpConfig{
+			Address:     "127.0.0.1:3000",
+			ProxyHeader: "",
+			Proxies:     []string{},
+		},
+		API: apiConfig{
+			CORSAllowOrigins: "",
+		},
+		Storage: storageConfig{
+			URL: "redis://localhost:6379/0",
+		},
+		CSR: csrConfig{
+			TTL:        24 * time.Hour,
+			CACertPath: "",
+			CAKeyPath:  "",
+		},
+	}
 }
 
 func New() (Config, error) {
-	return instance, config.Load(&instance)
+	cfg := Default()
+
+	options := []config.Option{}
+	if yamlPath := os.Getenv("CONFIG_PATH"); yamlPath != "" {
+		options = append(options, config.WithLocalYAML(yamlPath))
+	}
+
+	if err := config.Load(&cfg, options...); err != nil {
+		return Config{}, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	return cfg, nil
 }

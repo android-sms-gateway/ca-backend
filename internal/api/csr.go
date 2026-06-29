@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/android-sms-gateway/ca/internal/csr"
 	"github.com/android-sms-gateway/client-go/ca"
@@ -27,16 +28,16 @@ type csrHandler struct {
 //	@Failure	500		{object}	http.ErrorResponse
 //	@Router		/csr [post]
 //
-// Submit CSR
+// Submit CSR.
 func (c *csrHandler) submit(ctx *fiber.Ctx) error {
-	req := ca.PostCSRRequest{}
+	var req ca.PostCSRRequest
 	if err := c.BodyParserValidator(ctx, &req); err != nil {
-		return err
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
 	res, err := c.csrSvc.Create(ctx.Context(), csr.NewCSR(req.Type, req.Content, req.Metadata))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create csr: %w", err)
 	}
 
 	return ctx.
@@ -55,13 +56,13 @@ func (c *csrHandler) submit(ctx *fiber.Ctx) error {
 //	@Failure	500	{object}	http.ErrorResponse
 //	@Router		/csr/{id} [get]
 //
-// Get CSR Status
+// Get CSR Status.
 func (c *csrHandler) status(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 
 	res, err := c.csrSvc.Get(ctx.Context(), id)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get csr: %w", err)
 	}
 
 	return ctx.JSON(csrStatusToResponse(res))
@@ -78,22 +79,19 @@ func (c *csrHandler) handleError(ctx *fiber.Ctx) error {
 	err := ctx.Next()
 
 	if err == nil {
-		return err
+		return nil
 	}
 
-	if errors.Is(err, csr.ErrCSRNotFound) {
+	switch {
+	case errors.Is(err, csr.ErrCSRNotFound):
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
-	}
-
-	if errors.Is(err, csr.ErrCSRAlreadyExists) {
+	case errors.Is(err, csr.ErrCSRInvalid):
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	case errors.Is(err, csr.ErrCSRAlreadyExists):
 		return fiber.NewError(fiber.StatusConflict, err.Error())
 	}
 
-	if errors.Is(err, csr.ErrCSRInvalid) {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	}
-
-	return err
+	return err //nolint:wrapcheck // pass through
 }
 
 func newCSR(csrSvc *csr.Service, v *validator.Validate, l *zap.Logger) *csrHandler {

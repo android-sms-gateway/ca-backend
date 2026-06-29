@@ -50,16 +50,25 @@ func (c CSR) toMap() map[string]string {
 	}
 }
 
-type CSRStatus struct {
+type Status struct {
 	CSR
+
 	id          string
 	status      ca.CSRStatus
 	certificate string
 	reason      string
 }
 
-func NewCSRStatus(id string, csrType ca.CSRType, content string, metadata map[string]string, status ca.CSRStatus, certificate string, reason string) CSRStatus {
-	return CSRStatus{
+func NewCSRStatus(
+	id string,
+	csrType ca.CSRType,
+	content string,
+	metadata map[string]string,
+	status ca.CSRStatus,
+	certificate string,
+	reason string,
+) Status {
+	return Status{
 		CSR: CSR{
 			csrType:  csrType,
 			content:  content,
@@ -72,15 +81,15 @@ func NewCSRStatus(id string, csrType ca.CSRType, content string, metadata map[st
 	}
 }
 
-func (c CSRStatus) ID() string {
+func (c Status) ID() string {
 	return c.id
 }
 
-func (c CSRStatus) Status() ca.CSRStatus {
+func (c Status) Status() ca.CSRStatus {
 	return c.status
 }
 
-func (c CSRStatus) Certificate() string {
+func (c Status) Certificate() string {
 	return c.certificate
 }
 

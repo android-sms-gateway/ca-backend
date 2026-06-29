@@ -1,52 +1,61 @@
-# Go parameters
-GOCMD=go
-GOBUILD=$(GOCMD) build
-GOCLEAN=$(GOCMD) clean
-GOTEST=$(GOCMD) test
-GOGET=$(GOCMD) get
+.PHONY: all version fmt lint test coverage benchmark air deps gen release clean build help
 
-# Linting
-GOLINT=golangci-lint
+BINARY_NAME := $(shell basename $(PWD))
+GIT_VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+VERSION ?= $(GIT_VERSION)
+DOCKER_CR ?= $(shell basename $$(dirname $(PWD)))
+DOCKER_IMAGE := ${DOCKER_CR}/$(BINARY_NAME):$(VERSION)
 
-AIR=air
+all: fmt lint coverage ## Run all tests and checks
 
-all: lint test benchmark
+version: ## Display current version
+	@echo "Current version: $(VERSION)"
 
-air:
-	$(AIR) -c .air.toml
+fmt: gen ## Format code
+	golangci-lint fmt
 
-test:
-	$(GOTEST) -v -coverprofile=coverage.out ./...
-	$(GOCMD) tool cover -html=coverage.out -o coverage.html
+lint: ## Run linter
+	golangci-lint run --timeout=5m
 
-benchmark:
-	$(GOTEST) -v -bench=. -benchmem ./...
+test: ## Run tests
+	go test -race -shuffle=on -count=1 -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./...
 
-lint:
-	$(GOLINT) run
+coverage: test ## Generate coverage
+	go tool cover -func=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
 
-clean:
-	$(GOCLEAN)
-	rm -f coverage.out
-	rm -f coverage.html
+benchmark: ## Run benchmarks
+	go test -run=^$$ -bench=. -benchmem ./... | tee benchmark.txt
 
-run:
-	docker compose up --build
+air: ## Run development server
+	@command -v air >/dev/null 2>&1 || { \
+      echo "Please install air: go install github.com/air-verse/air@latest"; \
+      exit 1; \
+    }
+	@echo "Starting development server with air..."
+	TZ=UTC DEBUG=1 air
 
-api-docs:
-	@if ! swag fmt -g ./main.go; then \
-		echo "Error: Failed to format API docs"; \
-		exit 1; \
-	fi
-	@if ! swag init --parseDependency -g ./main.go -o ./api; then \
-		echo "Error: Failed to generate API docs"; \
-		exit 1; \
-	fi
+deps: ## Install dependencies
+	go mod download
 
-deps:
-	$(GOGET) -v -d ./...
-	go install github.com/cosmtrek/air@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	go install github.com/swaggo/swag/cmd/swag@latest
+gen: ## Generate code
+	go generate ./...
 
-.PHONY: all air test benchmark lint clean run api-docs deps
+release: ## Create release
+	goreleaser release --snapshot --clean
+
+clean: ## Clean build artifacts
+	rm -f coverage.* benchmark.txt
+	rm -rf dist bin
+
+build: ## Build the project
+	@echo "Building the project..."
+	@mkdir -p bin
+	go build -o bin/$(BINARY_NAME) .
+
+help: ## Show help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+# Use the wildcard function to expand the pattern to a list of existing files
+# and then include that list of files.
+include $(wildcard *.mk)
