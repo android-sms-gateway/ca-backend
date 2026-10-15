@@ -6,25 +6,26 @@
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
 
-A private Certificate Authority for the SMSGate ecosystem that issues short-lived certificates for private IP addresses, eliminating self-signed certificate management. See [Certificate Authority](https://docs.sms-gate.app/services/ca/) for the full guide.
+A private Certificate Authority for the SMSGate ecosystem that issues certificates valid for one year for private IP addresses, eliminating self-signed certificate management. See [Certificate Authority](https://docs.sms-gate.app/services/ca/) for the full guide.
 
 ## 📖 About
 
-Public CAs cannot validate private IP addresses, so local SMSGate deployments need their own CA. This service accepts certificate signing requests via a REST API, validates that each request targets exactly one private IP address (RFC 1918), signs certificates valid for 365 days, and stores request state in Redis.
+Public CAs cannot validate private IP addresses, so local SMSGate deployments need their own CA. This service accepts certificate signing requests via a REST API, validates that each request targets exactly one private IP address (RFC 1918 for IPv4, RFC 4193 `fc00::/7` for IPv6), signs certificates valid for 365 days, and stores request state in Redis.
 
 ## 📚 Table of Contents
 
-- [📖 About](#-about)
-- [📚 Table of Contents](#-table-of-contents)
-- [⭐ Features](#-features)
-- [📦 Prerequisites](#-prerequisites)
-- [🚀 Getting Started](#-getting-started)
-- [⚙️ Configuration](#️-configuration)
-- [📦 Deployment](#-deployment)
-- [🔌 API Overview](#-api-overview)
-- [📚 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+- [🔐 Certificate Authority](#-certificate-authority)
+  - [📖 About](#-about)
+  - [📚 Table of Contents](#-table-of-contents)
+  - [⭐ Features](#-features)
+  - [📦 Prerequisites](#-prerequisites)
+  - [🚀 Getting Started](#-getting-started)
+  - [⚙️ Configuration](#️-configuration)
+  - [📦 Deployment](#-deployment)
+  - [🔌 API Overview](#-api-overview)
+  - [📚 Documentation](#-documentation)
+  - [🤝 Contributing](#-contributing)
+  - [📄 License](#-license)
 
 ## ⭐ Features
 
@@ -78,15 +79,22 @@ Full reference: [Certificate Authority](https://docs.sms-gate.app/services/ca/).
 
 ## 📦 Deployment
 
+> **Security:** the published port exposes an unauthenticated certificate-signing endpoint. Restrict it to trusted clients or place the service behind an authenticated gateway.
+
 ```bash
 docker compose up -d
 ```
 
-Or with Docker directly:
+Or with Docker directly — the service and Redis must share a user-defined network so the `redis` hostname resolves:
 
 ```bash
-docker run -d --name ca-backend \
+docker network create ca-net
+
+docker run -d --name ca-redis --network ca-net --network-alias redis redis:7
+
+docker run -d --name ca-backend --network ca-net \
   -p 3000:3000 \
+  -e HTTP__ADDRESS=:3000 \
   -e STORAGE__URL=redis://redis:6379/0 \
   -e CSR__CA_CERT_PATH=/etc/ca/ca.crt \
   -e CSR__CA_KEY_PATH=/etc/ca/ca.key \
@@ -103,7 +111,6 @@ See [compose.yaml](compose.yaml) for the full service definition (includes Redis
 | POST   | `/api/v1/csr`      | Submit a CSR (202 Accepted)      |
 | GET    | `/api/v1/csr/{id}` | Check CSR status and certificate |
 | GET    | `/docs`            | Swagger/OpenAPI documentation    |
-| GET    | `/health`          | Health probes                    |
 | GET    | `/metrics`         | Prometheus metrics               |
 
 ## 📚 Documentation
@@ -113,7 +120,7 @@ See [compose.yaml](compose.yaml) for the full service definition (includes Redis
 
 ## 🤝 Contributing
 
-Contributions are welcome. Open an issue or pull request; follow the repo's `make fmt` / `make lint` / `make test` checks and the [README style guide](https://docs.sms-gate.app/).
+Contributions are welcome. Open an issue or pull request; follow the repo's `make fmt` / `make lint` / `make test` checks and the [contributing guide](https://docs.sms-gate.app/contributing/).
 
 ## 📄 License
 
@@ -129,4 +136,4 @@ Apache-2.0. See [LICENSE](LICENSE).
 [issues-shield]: https://img.shields.io/github/issues/android-sms-gateway/ca-backend?style=for-the-badge
 [issues-url]: https://github.com/android-sms-gateway/ca-backend/issues
 [license-shield]: https://img.shields.io/github/license/android-sms-gateway/ca-backend?style=for-the-badge
-[license-url]: https://github.com/android-sms-gateway/ca-backend/blob/main/LICENSE
+[license-url]: https://github.com/android-sms-gateway/ca-backend/blob/master/LICENSE
