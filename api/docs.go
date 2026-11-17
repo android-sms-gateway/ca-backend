@@ -55,13 +55,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/http.JSONErrorResponse"
+                            "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/http.JSONErrorResponse"
+                            "$ref": "#/definitions/http.ErrorResponse"
                         }
                     }
                 }
@@ -98,19 +98,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/http.JSONErrorResponse"
+                            "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/http.JSONErrorResponse"
+                            "$ref": "#/definitions/http.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/http.JSONErrorResponse"
+                            "$ref": "#/definitions/http.ErrorResponse"
                         }
                     }
                 }
@@ -237,21 +237,23 @@ const docTemplate = `{
                 }
             }
         },
-        "http.JSONErrorResponse": {
+        "http.Error": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "details": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "http.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
-                    "type": "object",
-                    "properties": {
-                        "code": {
-                            "description": "Code",
-                            "type": "integer"
-                        },
-                        "message": {
-                            "description": "Message",
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/http.Error"
                 }
             }
         }

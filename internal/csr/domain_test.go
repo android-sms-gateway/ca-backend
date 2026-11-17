@@ -9,6 +9,8 @@ import (
 )
 
 func TestNewCSR(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		csrType  ca.CSRType
@@ -37,6 +39,8 @@ func TestNewCSR(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got := csr.NewCSR(tt.csrType, tt.content, tt.metadata)
 
 			// Check type (should default to webhook if empty)
@@ -54,6 +58,8 @@ func TestNewCSR(t *testing.T) {
 }
 
 func TestCSR_Getters(t *testing.T) {
+	t.Parallel()
+
 	csrType := ca.CSRType("private_server")
 	content := "test-content"
 	metadata := map[string]string{"key": "value"}
@@ -66,6 +72,8 @@ func TestCSR_Getters(t *testing.T) {
 }
 
 func TestNewCSRStatus(t *testing.T) {
+	t.Parallel()
+
 	id := "test-id"
 	csrType := ca.CSRType("private_server")
 	content := "test-content"
@@ -86,6 +94,8 @@ func TestNewCSRStatus(t *testing.T) {
 }
 
 func TestCSRStatus_Getters(t *testing.T) {
+	t.Parallel()
+
 	id := "test-id"
 	csrType := ca.CSRType("private_server")
 	content := "test-content"

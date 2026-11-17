@@ -91,7 +91,7 @@ func (c *csrHandler) handleError(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusConflict, err.Error())
 	}
 
-	return err //nolint:wrapcheck // pass through
+	return err
 }
 
 func newCSR(csrSvc *csr.Service, v *validator.Validate, l *zap.Logger) *csrHandler {
